@@ -1,8 +1,8 @@
-# 🏗️ Pértiga Dashboard — Real Estate AI Analytics
+# 🏗️ Dashboard Inmobiliario — Pértiga Soluciones
 
-**Analytics dashboard for AI-powered WhatsApp real estate bot — Pértiga Soluciones**
+**Dashboard operacional para el bot de WhatsApp inmobiliario de Pértiga Soluciones SAS**
 
-A real-time analytics dashboard for monitoring WhatsApp conversations, lead scoring, property inventory, and AI bot performance. Built as part of the **Pértiga MVP** — an AI-powered real estate assistant that handles property search and scheduling via WhatsApp.
+Sistema interno de monitoreo y gestión del bot de WhatsApp inmobiliario "Inmobiliaria Puerta". Permite visualizar conversaciones en tiempo real, gestionar leads con scoring automático, administrar el inventario de propiedades con búsqueda semántica, y agendar visitas desde el dashboard. Desplegado en producción desde junio de 2026.
 
 ![License](https://img.shields.io/badge/license-proprietary-orange)
 ![Platform](https://img.shields.io/badge/platform-Node.js-green)
@@ -151,7 +151,7 @@ Dashboard (este proyecto) ← consumo y gestión operativa
 | **Autenticación** | sha256 + cookie de sesión | Login con rate limiting y lockout |
 | **Bot LLM** | Ollama + cloud models | Extracción de filtros y respuesta conversacional |
 
-## 🛠️ Competencias técnicas demostradas
+## 🛠️ Stack y patrones técnicos
 
 ### Frontend (Vanilla JS, sin framework)
 - **Arquitectura SPA** con sistema de tabs/secciones dinámicas
@@ -257,14 +257,14 @@ pertiga-dashboard/
 ├── README.en.md
 ├── LICENSE
 ├── src/
-│   ├── server.js              # Backend Node.js (esqueleto)
-│   └── index.html             # Frontend SPA (esqueleto)
+│   ├── server.js              # Backend Node.js (extracto de código real)
+│   └── index.html             # Frontend SPA (extracto de código real)
 └── docs/
     ├── arquitectura.md        # Detalles técnicos
     └── schema.sql             # Esquema de BD simplificado
 ```
 
-> ⚠️ **Nota sobre el código fuente**: Por ser un producto comercial activo, el código fuente completo no está publicado. Los archivos en `src/` son esqueletos representativos que muestran la arquitectura y patrones utilizados, pero no incluyen la implementación completa.
+> ⚠️ **Nota sobre el código fuente**: Por ser un producto comercial activo, el código fuente completo no está publicado. Los archivos en `src/` son extractos de código real de producción (sanitizados) que muestran la arquitectura y patrones utilizados.
 
 ## ⚠️ Notas
 

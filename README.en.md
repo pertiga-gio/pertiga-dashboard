@@ -151,7 +151,7 @@ Dashboard (this project) ← operational consumption and management
 | **Authentication** | sha256 + session cookie | Login with rate limiting and lockout |
 | **Bot LLM** | Ollama + cloud models | Filter extraction and conversational response |
 
-## 🛠️ Demonstrated Technical Competencies
+## 🛠️ Tech Stack & Patterns
 
 ### Frontend (Vanilla JS, no framework)
 - **SPA architecture** with dynamic tab/section system
@@ -257,14 +257,14 @@ pertiga-dashboard/
 ├── README.en.md
 ├── LICENSE
 ├── src/
-│   ├── server.js              # Node.js backend (skeleton)
-│   └── index.html             # Frontend SPA (skeleton)
+│   ├── server.js              # Node.js backend (real code excerpt)
+│   └── index.html             # Frontend SPA (real code excerpt)
 └── docs/
     ├── arquitectura.md        # Technical details
     └── schema.sql             # Simplified DB schema
 ```
 
-> ⚠️ **Note on source code**: As this is an active commercial product, the full source code is not published. Files in `src/` are representative skeletons showing the architecture and patterns used, but do not include the full implementation.
+> ⚠️ **Note on source code**: As this is an active commercial product, the full source code is not published. Files in `src/` are real production code excerpts (sanitized) showing the architecture and patterns used.
 
 ## ⚠️ Notes
 
