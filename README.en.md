@@ -1,13 +1,14 @@
-# 🏗️ Pértiga Dashboard — Real Estate AI Analytics
+# 🏠 Inmobiliaria Puerta — WhatsApp Bot + Dashboard
 
-**Analytics dashboard for AI-powered WhatsApp real estate bot — Pértiga Soluciones**
+**Comprehensive AI-powered WhatsApp real estate system**
 
-A real-time analytics dashboard for monitoring WhatsApp conversations, lead scoring, property inventory, and AI bot performance. Built as part of the **Pértiga MVP** — an AI-powered real estate assistant that handles property search and scheduling via WhatsApp.
+A WhatsApp bot powered by LLM that serves clients automatically: searches properties using semantic embeddings, schedules visits via Google Calendar, qualifies leads with automatic scoring, and generates conversational reports. Includes an operational dashboard for real-time conversation monitoring, lead management, and property inventory control. In production since June 2026.
 
 ![License](https://img.shields.io/badge/license-proprietary-orange)
 ![Platform](https://img.shields.io/badge/platform-Node.js-green)
 ![Status](https://img.shields.io/badge/status-production-success)
-![Language](https://img.shields.io/badge/language-JavaScript-yellow)
+![WhatsApp](https://img.shields.io/badge/WhatsApp-Business-25D366)
+![AI](https://img.shields.io/badge/LLM-Ollama-6E56CF)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-blue)
 
 <!-- SCREENSHOTS -->
@@ -27,131 +28,145 @@ A real-time analytics dashboard for monitoring WhatsApp conversations, lead scor
 
 ## 🎯 Context
 
-**Pértiga Soluciones SAS** is an AI automation company. One of its products is a **WhatsApp real estate bot** ("Inmobiliaria Puerta") that serves clients automatically: searches properties, schedules visits, and qualifies leads.
+**Pértiga Soluciones SAS** developed **Inmobiliaria Puerta**, a comprehensive WhatsApp-based real estate service system. The bot ("Ximena") converses naturally with clients, understands their preferences, searches properties from inventory using hybrid semantic search, schedules visits via Google Calendar, and automatically qualifies leads. The dashboard lets the team monitor all this in real time.
 
-This dashboard is the **internal tool** that allows the team to monitor and manage the bot in production. It's not a customer-facing product — it's the team's operational tool.
+## ✅ What the System Does
 
-## ✅ What It Does
+### 🤖 WhatsApp Bot (Inmobiliaria Puerta)
 
-### 📊 Summary Panel
-- **Real-time KPIs**: unique users, total messages, leads, conversion rate
-- **Activity charts**: messages and leads per day (7d / 30d / 90d)
-- **Conversion funnel**: Conversations → Leads → Handoffs → Visits scheduled
-- **Average bot response time**
+- **Natural Colombian Spanish conversation** with "Ximena" personality
+- **Semantic property search**: combines vector embeddings (bge-m3, 1024-dim) with hard SQL filters
+- **LLM filter extraction**: understands "busco apartamento en Cali zona norte, 3 hab, presupuesto 300 millones" without commands
+- **Two-stage search**:
+  1. **Stage 1**: LLM extracts structured parameters (city, zone, type, budget, rooms, neighborhood)
+  2. **Stage 2**: generates vector embedding + hybrid search in PostgreSQL (pgvector)
+- **Visit scheduling** via Google Calendar API (create, edit, cancel)
+- **Automatic lead scoring**: new → cold → warm → hot based on interaction
+- **Conversation persistence** in PostgreSQL for historical context
+- **5-phase sales flow**: GREETING → QUALIFICATION → BUDGET → CTA → CLOSE
+- **Anti-hallucination validation**: bot only recommends properties from real inventory, with exact prices
 
-### 📡 Live Monitor
-- **Real-time conversation streaming** (polling-based)
-- Configurable auto-refresh (on/off)
-- Filter by lead status (hot/warm/cold)
-- WhatsApp webhook status indicator (Meta Cloud API)
+### 📊 Operational Dashboard
 
-### 📋 Leads
-- **Automatic lead scoring**: `new` → `cold` → `warm` → `hot`
-- Hot leads polling with visual notification (🔥)
-- Saved preferences: neighborhood, operation, property type, budget
-- Conversation history per lead
-- Manual editing of scores and notes
-
-### 💬 Conversations
-- Full message history by phone number
-- Search by phone number
-- Per-phone metrics: message count, properties mentioned, last interaction
-- Top 5 most-mentioned properties
-
-### 🏠 Property Inventory
-- Full CRUD: create, edit, delete properties
-- **289 properties** with vector embeddings
-- Filters by city, zone, type, status
-- Pagination and CSV export
-- Bulk JSON import
-- **Embedding generation** (individual + batch) via Ollama
-- Status updates (available / reserved / sold)
+- **📊 Real-time KPIs**: unique users, messages, leads, conversion rate, response time
+- **📡 Live monitor**: active conversation streaming with auto-refresh
+- **📋 Leads**: automatic scoring, filters, CSV export, per-lead history
+- **💬 Conversations**: full message history, phone-based search
+- **🏠 Inventory**: property CRUD, embedding generation, bulk import, CSV export
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        DASHBOARD (Port 3002)                    │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │  index.html — Single Page App (Vanilla JS, 2800+ lines)    │ │
-│  │  • Dashboard with KPIs, charts, funnel                      │ │
-│  │  • Live monitor (5s polling)                                │ │
-│  │  • Property CRUD + embedding management                     │ │
-│  │  • Date filters, sort/pagination tables                     │ │
-│  └──────────────────────────┬──────────────────────────────────┘ │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │  server.js — Node.js HTTP server (530 lines)                │ │
-│  │  • Session auth (sha256 + cookie)                           │ │
-│  │  • Rate limiting (5 attempts / 15 min lockout)             │ │
-│  │  • PostgREST proxy (injects API key server-side)            │ │
-│  │  • Embedding generation via Ollama (bge-m3)                │ │
-│  │  • Batch embedding for properties without vectors           │ │
-│  └──────────┬───────────────────────────────┬──────────────────┘ │
-└─────────────┼───────────────────────────────┼────────────────────┘
-              │                               │
-              ▼                               ▼
-┌──────────────────────────┐    ┌─────────────────────────────────┐
-│  PostgREST (Port 3000)   │    │  Ollama (Port 11434)            │
-│  • REST API over         │    │  • Model: bge-m3 (embeddings)   │
-│    PostgreSQL            │    │  • Generates 1024-dim vectors   │
-│  • Tables: properties,  │    │  • Used for semantic search      │
-│    leads, bot_convo,     │    │    on property inventory          │
-│    appointments          │    └─────────────────────────────────┘
-└───────────┬──────────────┘
-            │
-            ▼
-┌──────────────────────────────────────────────────────────┐
-│  Supabase / PostgreSQL                                   │
-│  Tables:                                                 │
-│  • properties (28 cols, incl. embedding vector(1024))    │
-│  • leads (lead_score, budget, preferences)              │
-│  • bot_conversations (role, content,timestamps)         │
-│  • appointments (scheduled visits)                      │
-│  • buscar_propiedades_hibrido (RPC function)            │
-│    → hybrid search: semantic embedding + SQL filters    │
-└──────────────────────────────────────────────────────────┘
-```
-
-### WhatsApp bot data flow (context)
-
-The dashboard consumes data generated by the **WhatsApp bot** running in parallel:
-
-```
-WhatsApp Client
-   │
-   ▼
-Meta Cloud API → Cloudflare Tunnel → Node.js Proxy (8090)
-   │
-   ▼
-n8n Workflow (9QZcTKil0MZNgBhQ)
-   ├── Stage 1: Filter extraction (LLM via Ollama)
-   ├── Stage 2: Semantic search (PostgREST RPC + bge-m3 embeddings)
-   ├── Conversational response (LLM via Ollama)
-   ├── Persistence (bot_conversations in PostgreSQL)
-   └── Scheduling (Google Calendar API)
-   │
-   ▼
-PostgreSQL (leads, conversations, appointments)
-   │
-   ▼
-Dashboard (this project) ← operational consumption and management
+                    WhatsApp Client
+                         │
+                         ▼
+              Meta Cloud API (WhatsApp Business)
+                         │
+                         ▼ webhook
+              Cloudflare Tunnel (webhook.pertigasoluciones.com)
+                         │
+                         ▼
+              Node.js Proxy (port 8090)
+              ┌────────────────────────────────┐
+              │ • HMAC-SHA256 signature verify  │
+              │ • Rate limiting (60 req/min/IP) │
+              │ • Bot blocklist                  │
+              │ • Routing by phone_number_id     │
+              └───────────┬────────────────────┘
+                          │
+                          ▼
+              n8n Workflow (Real Estate Bot)
+              ┌─────────────────────────────────────────────┐
+              │ Stage 1: Filter extraction                    │
+              │   ├── Regex extraction (operation, city,     │
+              │   │   zone, type, price, rooms)              │
+              │   ├── LLM extraction (nemotron-3-super)      │
+              │   └── Merge: regex + LLM with whitelist       │
+              │                                               │
+              │ Stage 2: Hybrid semantic search                │
+              │   ├── Generate embedding (bge-m3, 1024-dim)   │
+              │   ├── PostgREST RPC: buscar_propiedades_hibrido
+              │   ├── Hard SQL filters (type, zone, city)    │
+              │   └── Order by cosine similarity              │
+              │                                               │
+              │ Stage 3: Conversational response              │
+              │   ├── LLM (minimax-m3) with system prompt     │
+              │   ├── Inventory injected into prompt          │
+              │   └── Hidden blocks for Google Calendar       │
+              │                                               │
+              │ Persistence:                                  │
+              │   ├── bot_conversations (PostgreSQL)          │
+              │   ├── leads (scoring, preferences)            │
+              │   └── appointments (scheduled visits)         │
+              └───────────┬──────────────────────────────────┘
+                          │
+                          ▼
+              PostgreSQL (Supabase) + pgvector
+              ┌────────────────────────────────┐
+              │ • properties (289, embedding)   │
+              │ • leads (scoring, preferences)  │
+              │ • bot_conversations             │
+              │ • appointments                  │
+              │ • buscar_propiedades_hibrido()  │
+              └───────────┬────────────────────┘
+                          │
+                          ▼
+              Dashboard (port 3002)
+              ┌────────────────────────────────┐
+              │ Vanilla JS SPA (2800+ lines)    │
+              │ • KPIs, charts, funnel          │
+              │ • Live monitor (5s polling)      │
+              │ • Property CRUD + embeddings    │
+              │ • Lead management                │
+              │                                 │
+              │ Node.js backend (530 lines)     │
+              │ • SHA-256 auth + 24h cookie     │
+              │ • Rate limiting (5/15min)        │
+              │ • PostgREST proxy + API key     │
+              │ • Embedding gen via Ollama      │
+              └────────────────────────────────┘
 ```
 
 ## 🔧 Tech Stack
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Frontend** | Vanilla HTML/CSS/JavaScript (no framework) | SPA with tabs, charts, tables, modals |
-| **Backend** | Node.js HTTP server (no framework) | Auth, API proxy, embedding management |
-| **Database** | PostgreSQL (via Supabase) | properties, leads, conversations, appointments |
-| **REST API** | PostgREST | Auto-generated REST CRUD over PostgreSQL |
-| **Vector embeddings** | bge-m3 (via Ollama) | 1024-dim embeddings for semantic search |
-| **Authentication** | sha256 + session cookie | Login with rate limiting and lockout |
-| **Bot LLM** | Ollama + cloud models | Filter extraction and conversational response |
+| **WhatsApp** | Meta Cloud API + Cloudflare Tunnel | Incoming message webhook |
+| **Proxy** | Node.js (native http, 323 lines) | HMAC verify, rate limiting, bot routing |
+| **Orchestration** | n8n (visual workflow) | Bot processing pipeline |
+| **LLM (extraction)** | nemotron-3-super:cloud (Ollama API) | Extract filters from natural language |
+| **LLM (response)** | minimax-m3:cloud (Ollama API) | Generate conversational response |
+| **Embeddings** | bge-m3 (Ollama, 1024-dim) | Property and query vectorization |
+| **Database** | PostgreSQL (Supabase) + pgvector | properties, leads, conversations, appointments |
+| **REST API** | PostgREST | CRUD over PostgreSQL |
+| **Frontend** | Vanilla HTML/CSS/JavaScript | SPA with tabs, charts, tables, modals |
+| **Dashboard Backend** | Node.js (native http, 530 lines) | Auth, API proxy, embedding management |
+| **Scheduling** | Google Calendar API (Service Account JWT) | Create/edit/cancel visits |
 
 ## 🛠️ Tech Stack & Patterns
+
+### WhatsApp Bot — Processing Pipeline
+- **Webhook verification** HMAC-SHA256 with Meta App Secret
+- **Rate limiting** in-memory (60 req/min per IP)
+- **Bot blocklist** to filter known spam numbers
+- **Routing by phone_number_id**: supports multiple bots on the same proxy
+- **Hybrid filter extraction**: regex (fast) + LLM (natural language understanding), with whitelist validation
+- **Negation detection**: "no quiero apartamento, busco casa" → adjusts filters correctly
+- **Historical context**: uses last 20 messages to maintain context in long conversations
+- **Retry with exponential backoff** on LLM calls (429 rate limits)
+- **SQL fallback**: if semantic search returns few results, merges with pure SQL
+- **Amenity boost**: amenities (pool, gym) reorder results, don't filter
+
+### Hybrid Semantic Search (PostgreSQL + pgvector)
+- **289 properties** vectorized with bge-m3 (1024 dimensions)
+- **RPC function** `buscar_propiedades_hibrido` in PL/pgSQL
+- **Dynamic threshold**: 0.01 with barrio filter, 0.05 with other hard filters, 0.15 without filters
+- **ILIKE fuzzy match** for neighborhoods (case-insensitive, partial match)
+- **Zone as boost** (not hard filter): +0.15 if match, -0.03 if not
+- **Flexible price**: filters up to 130% of max budget
+- **COALESCE** for properties without embedding (appear if they match SQL)
 
 ### Frontend (Vanilla JS, no framework)
 - **SPA architecture** with dynamic tab/section system
@@ -163,7 +178,7 @@ Dashboard (this project) ← operational consumption and management
 - **Light/Dark theme** with localStorage persistence
 - **Responsive design** (sidebar + bottom-nav on mobile)
 
-### Backend
+### Dashboard Backend
 - **Custom HTTP server** (Node `http` module, no Express)
 - **Authentication system** with SHA-256, cookie sessions, 24h expiry
 - **Rate limiting**: 5 attempts → 15 min lockout (in-memory map)
@@ -172,81 +187,60 @@ Dashboard (this project) ← operational consumption and management
 - **PostgREST proxy** with retries and timeout handling
 - **Batch processing** of embeddings (50 properties concurrent)
 
-### Database & Semantic Search
-- **Relational schema** for real estate CRM (properties, leads, conversations, appointments)
-- **Hybrid search** (PostgreSQL RPC): combine semantic embeddings + hard SQL filters
-- **289 embeddings** generated with bge-m3 (1024 dimensions)
-- **Lead scoring** persistent with 4 levels (new/cold/warm/hot)
-- **Vector similarity search** with pgvector
-
-### External API Integrations
-- **Meta Cloud API** (WhatsApp Business) — webhook reception
-- **Ollama API** — embedding generation and LLM
-- **PostgREST** — CRUD over PostgreSQL
-- **Google Calendar API** — visit scheduling (via bot, visible in dashboard)
-
 ### DevOps & Infrastructure
 - **Nginx reverse proxy** with SSL/TLS (Let's Encrypt)
-- **Systemd services** for persistent processes
+- **Cloudflare Tunnel** (named tunnel) for Meta webhook — fixed URL without exposing IP
 - **Docker Compose** for the stack (Supabase, n8n)
-- **Cloudflare Tunnel** for Meta webhooks
-- **Logging** and webhook status monitoring
+- **Systemd services** for persistent processes
+- **Ollama** running locally with cloud models (minimax-m3, nemotron-3-super, bge-m3)
 
-## 📊 Database Schema (simplified)
+## 🗂️ Bot Flow — Mermaid Diagram
 
-```sql
--- Properties with vector embeddings for semantic search
-properties (
-  id UUID PRIMARY KEY,
-  title TEXT, property_type TEXT, operation_type TEXT,
-  neighborhood TEXT, city TEXT, price BIGINT,
-  rooms INT, bathrooms INT, area_sqm INT,
-  tiene_piscina BOOL, tiene_gimnasio BOOL, ...  -- 20+ amenities
-  embedding VECTOR(1024),  -- bge-m3
-  status TEXT DEFAULT 'disponible'
-)
+```mermaid
+sequenceDiagram
+    participant C as WhatsApp Client
+    participant M as Meta Cloud API
+    participant P as Proxy (8090)
+    participant N as n8n
+    participant L as Ollama LLM
+    participant E as Ollama bge-m3
+    participant D as PostgreSQL
+    participant G as Google Calendar
 
--- Leads with automatic scoring
-leads (
-  id UUID PRIMARY KEY,
-  phone_number TEXT UNIQUE,
-  name TEXT, email TEXT,
-  lead_score TEXT CHECK IN ('new','cold','warm','hot'),
-  budget_min BIGINT, budget_max BIGINT,
-  preferred_neighborhood TEXT, preferred_property_type TEXT,
-  preferred_operation TEXT CHECK IN ('venta','arriendo'),
-  notes TEXT, last_contact_at TIMESTAMPTZ
-)
+    C->>M: "Busco apto en Cali, 3 hab, 300M"
+    M->>P: Webhook (HMAC verified)
+    P->>N: POST /webhook/whatsapp-cloud-inbound
 
--- WhatsApp bot conversations
-bot_conversations (
-  id UUID PRIMARY KEY,
-  phone TEXT, role TEXT CHECK IN ('user','assistant'),
-  content TEXT, created_at TIMESTAMPTZ
-)
+    Note over N: Stage 1 — Filter extraction
+    N->>N: Regex: cali=Cali, 3=rooms, 300M=300000000
+    N->>L: LLM extract: "¿city? ¿type? ¿zone?"
+    L-->>N: {city:Cali, rooms:3, max_price:300000000, op:venta}
+    N->>N: Merge regex + LLM (whitelist validation)
 
--- RPC function: hybrid semantic search
--- Combines embeddings + SQL filters:
---   - Hard filter by type, zone, city, operation
---   - Sort by embedding cosine similarity
---   - Amenity boost (not hard filter)
-buscar_propiedades_hibrido(
-  query_embedding VECTOR(1024),
-  match_threshold FLOAT, match_count INT,
-  filtro_zona TEXT, filtro_operacion TEXT,
-  filtro_tipo TEXT, filtro_ciudad TEXT,
-  precio_maximo BIGINT, filtro_rooms_min INT,
-  filtro_barrio TEXT, ...  -- 12 amenity filters
-)
+    Note over N: Stage 2 — Semantic search
+    N->>E: Generate query embedding
+    E-->>N: [0.1, 0.2, ... 1024 dims]
+    N->>D: RPC buscar_propiedades_hibrido(embedding, filters)
+    D-->>N: [property 1, property 2, ... property 8]
 
--- Scheduled visits (by WhatsApp bot)
-appointments (
-  id UUID PRIMARY KEY,
-  lead_id UUID REFERENCES leads(id),
-  property_id UUID REFERENCES properties(id),
-  scheduled_at TIMESTAMPTZ,
-  status TEXT CHECK IN ('scheduled','confirmed','cancelled','completed')
-)
+    Note over N: Stage 3 — Conversational response
+    N->>N: Build prompt: system + inventory + history
+    N->>L: LLM generate (minimax-m3)
+    L-->>N: "¡Hola! Encontré estas opciones..."
+    N->>D: Persist: bot_conversations (assistant)
+    N->>M: Send message to customer
+    M->>C: Bot response
+
+    Note over C: Client requests visit scheduling
+    C->>M: "Agéndame para el 20 de junio"
+    M->>P: Webhook
+    P->>N: POST
+    N->>N: Extract calendar block (<!--CALENDAR:...-->)
+    N->>G: POST /events (Service Account JWT)
+    G-->>N: Event created
+    N->>D: INSERT appointments
+    N->>M: "¡Cita agendada! Un asesor te contactará"
+    M->>C: Confirmation
 ```
 
 ## 📁 Repository Structure
@@ -257,21 +251,27 @@ pertiga-dashboard/
 ├── README.en.md
 ├── LICENSE
 ├── src/
-│   ├── server.js              # Node.js backend (real code excerpt)
-│   └── index.html             # Frontend SPA (real code excerpt)
+│   ├── server.js              # Dashboard backend (real code excerpt)
+│   ├── index.html             # Frontend SPA (real code excerpt)
+│   ├── proxy.js               # Meta webhook proxy (real code excerpt)
+│   └── system-prompt.md       # Bot system prompt (excerpt)
 └── docs/
-    ├── arquitectura.md        # Technical details
-    └── schema.sql             # Simplified DB schema
+    ├── arquitectura.md        # Technical details with Mermaid diagrams
+    ├── schema.sql             # Simplified DB schema
+    ├── screenshot-dashboard-resumen.png
+    ├── screenshot-dashboard-monitor.png
+    └── screenshot-dashboard-inventario.png
 ```
 
 > ⚠️ **Note on source code**: As this is an active commercial product, the full source code is not published. Files in `src/` are real production code excerpts (sanitized) showing the architecture and patterns used.
 
 ## ⚠️ Notes
 
-- This dashboard is **part of the Pértiga product** and is in **active production**
-- The associated WhatsApp bot uses Meta Cloud API (WhatsApp Business account)
-- Property data belongs to **Inmobiliaria Puerta**, a Pértiga client
-- Full source code is NOT published as it is a commercial product
+- System in **active production** for Inmobiliaria Puerta (Pértiga Soluciones SAS client)
+- Bot uses Meta Cloud API with WhatsApp Business account
+- **289 properties** in inventory with vector embeddings
+- Webhook domain: `webhook.pertigasoluciones.com` (Cloudflare Tunnel)
+- Dashboard accessible at `pertigasoluciones.com/dashboard/`
 
 ## 🔗 Related Links
 
