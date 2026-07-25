@@ -2,7 +2,7 @@
 
 **Sistema integral de atención inmobiliaria por WhatsApp con IA**
 
-Bot de WhatsApp potenciado por LLM que atiene clientes automáticamente: busca propiedades con embeddings semánticos, agenda visitas en Google Calendar, qualifica leads con scoring automático, y genera reportes conversacionales. Incluye un dashboard operacional para monitorear conversaciones en tiempo real, gestionar leads y administrar el inventario de propiedades. Desplegado en producción desde junio de 2026.
+Bot de WhatsApp potenciado por LLM que atiende clientes automáticamente: busca propiedades con embeddings semánticos, agenda visitas en Google Calendar, califica leads con scoring automático, y genera reportes conversacionales. Incluye un dashboard operacional para monitorear conversaciones en tiempo real, gestionar leads y administrar el inventario de propiedades. Desplegado en producción desde junio de 2026.
 
 ![License](https://img.shields.io/badge/license-proprietary-orange)
 ![Platform](https://img.shields.io/badge/platform-Node.js-green)
@@ -28,7 +28,7 @@ Bot de WhatsApp potenciado por LLM que atiene clientes automáticamente: busca p
 
 ## 🎯 Contexto
 
-**Pértiga Soluciones SAS** desarrolló **Inmobiliaria Puerta**, un sistema integral de atención inmobiliaria por WhatsApp. El bot ("Ximena") converse de forma natural con clientes, entiende sus preferencias, busca propiedades del inventario usando búsqueda semántica híbrida, agenda visitas en Google Calendar, y qualifica leads automáticamente. El dashboard permite al equipo monitorear todo esto en tiempo real.
+**Pértiga Soluciones SAS** desarrolló **Inmobiliaria Puerta**, un sistema integral de atención inmobiliaria por WhatsApp. El bot ("Ximena") conversa de forma natural con clientes, entiende sus preferencias, busca propiedades del inventario usando búsqueda semántica híbrida, agenda visitas en Google Calendar, y califica leads automáticamente. El dashboard permite al equipo monitorear todo esto en tiempo real.
 
 ## ✅ Qué hace el sistema
 
@@ -122,7 +122,7 @@ Bot de WhatsApp potenciado por LLM que atiene clientes automáticamente: busca p
               │ • Gestión de leads              │
               │                                 │
               │ Backend Node.js (530 líneas)    │
-              │ • Auth SHA-256 + cookie 24h     │
+              │ • Auth bcrypt + JWT cookie 24h   │
               │ • Rate limiting (5/15min)        │
               │ • Proxy PostgREST + API key     │
               │ • Gen. embeddings via Ollama    │
@@ -180,7 +180,7 @@ Bot de WhatsApp potenciado por LLM que atiene clientes automáticamente: busca p
 
 ### Backend Dashboard
 - **Servidor HTTP custom** (módulo `http` de Node, sin Express)
-- **Sistema de autenticación** con SHA-256, sesiones con cookie, expiración 24h
+- **Sistema de autenticación** con bcrypt, sesiones con cookie JWT, expiración 24h
 - **Rate limiting**: 5 intentos → bloqueo 15 min (map en memoria)
 - **Proxy reverse**: inyecta API key del lado del servidor (nunca expone al cliente)
 - **Integración con Ollama** para generación de embeddings (batch + individual)
@@ -191,7 +191,7 @@ Bot de WhatsApp potenciado por LLM que atiene clientes automáticamente: busca p
 - **Nginx reverse proxy** con SSL/TLS (Let's Encrypt)
 - **Cloudflare Tunnel** (named tunnel) para webhook de Meta — URL fija sin exponer IP
 - **Docker Compose** para el stack (Supabase, n8n)
-- **Systemd services** para procesos persistente
+- **Systemd services** para procesos persistentes
 - **Ollama** corriendo local con modelos cloud (minimax-m3, nemotron-3-super, bge-m3)
 
 ## 📊 Esquema de base de datos (simplificado)

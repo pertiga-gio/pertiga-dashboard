@@ -122,7 +122,7 @@ A WhatsApp bot powered by LLM that serves clients automatically: searches proper
               │ • Lead management                │
               │                                 │
               │ Node.js backend (530 lines)     │
-              │ • SHA-256 auth + 24h cookie     │
+              │ • Auth bcrypt + JWT cookie 24h   │
               │ • Rate limiting (5/15min)        │
               │ • PostgREST proxy + API key     │
               │ • Embedding gen via Ollama      │
@@ -180,7 +180,7 @@ A WhatsApp bot powered by LLM that serves clients automatically: searches proper
 
 ### Dashboard Backend
 - **Custom HTTP server** (Node `http` module, no Express)
-- **Authentication system** with SHA-256, cookie sessions, 24h expiry
+- **Authentication system** with bcrypt, JWT cookie sessions, 24h expiry
 - **Rate limiting**: 5 attempts → 15 min lockout (in-memory map)
 - **Reverse proxy**: injects API key server-side (never exposed to client)
 - **Ollama integration** for embedding generation (batch + individual)

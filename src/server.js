@@ -12,6 +12,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 const PORT = 3002;
@@ -28,10 +29,11 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// === AUTH: SHA-256 + session cookie ===
+// === AUTH: bcrypt + JWT session cookie ===
 const USERS = {};
+// Password hash is bcrypt (60 chars), stored in env var
 USERS[process.env.PERTIGA_ADMIN_USER || 'admin'] =
-  process.env.PERTIGA_ADMIN_HASH || crypto.createHash('sha256').update('changeme').digest('hex');
+  process.env.PERTIGA_ADMIN_HASH || bcrypt.hashSync('changeme', 10);
 const SESSIONS = new Map();
 const COOKIE_NAME = 'pertiga_session';
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
@@ -149,7 +151,7 @@ http.createServer((req, res) => {
     readBody(req).then(body => {
       try {
         const { user, pass } = JSON.parse(body);
-        if (USERS[user] && USERS[user] === crypto.createHash('sha256').update(pass).digest('hex')) {
+        if (USERS[user] && bcrypt.compareSync(pass, USERS[user])) {
           loginAttempts.delete(ip);
           const sid = crypto.randomBytes(32).toString('hex');
           SESSIONS.set(sid, { user, ts: Date.now() });
