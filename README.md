@@ -21,9 +21,9 @@ A real-time analytics dashboard for monitoring WhatsApp conversations, lead scor
 
 *Monitor en vivo: polling cada 5s de conversaciones activas, filtro por score de lead, estado del webhook Meta.*
 
-![Leads — Scoring automático y gestión](docs/screenshot-dashboard-leads.png)
+![Inventario — CRUD de propiedades con embeddings](docs/screenshot-dashboard-inventario.png)
 
-*Sección Leads: scoring automático (nuevo/frío/tibio/caliente), filtros por operación/barrio/score, exportación CSV.*
+*Inventario: propiedades con filtros por ciudad/zona/tipo/estado, generación de embeddings bge-m3 individual y batch.*
 
 ## 🎯 Contexto
 
