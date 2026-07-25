@@ -10,11 +10,24 @@ A real-time analytics dashboard for monitoring WhatsApp conversations, lead scor
 ![Language](https://img.shields.io/badge/language-JavaScript-yellow)
 ![Database](https://img.shields.io/badge/database-PostgreSQL-blue)
 
-> 🇬🇧 **English summary below** — [Jump to English](#-english-summary)
+> 🇬🇧 **English summary below** — [Jump to English](#-english-summary) · [Full English README](README.en.md)
 
-<!-- SCREENSHOTS placeholder -->
+<!-- SCREENSHOTS -->
+![Dashboard Resumen — KPIs, gráficos y funnel](docs/screenshot-resumen.png)
 
----
+*Dashboard principal: KPIs en tiempo real (usuarios únicos, mensajes, leads, conversión), actividad por día (7d/30d/90d) y funnel de conversión.*
+
+![Monitor en Vivo — Streaming de conversaciones](docs/screenshot-monitor.png)
+
+*Monitor en vivo: polling cada 5s de conversaciones activas, filtro por score de lead, estado del webhook Meta.*
+
+![Leads — Scoring automático y gestión](docs/screenshot-leads.png)
+
+*Sección Leads: scoring automático (nuevo/frío/tibio/caliente), filtros por operación/barrio/score, exportación CSV.*
+
+![Inventario — CRUD de propiedades con embeddings](docs/screenshot-inventario.png)
+
+*Inventario: 289 propiedades, filtros por ciudad/zona/tipo/estado, generación de embeddings bge-m3 individual y batch.*
 
 ## 🎯 Contexto
 

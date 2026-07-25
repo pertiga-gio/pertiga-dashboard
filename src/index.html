@@ -3,63 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pértiga — Dashboard (Skeleton)</title>
+    <title>Pértiga Dashboard (Code Excerpt)</title>
     <style>
-        /* Theme variables, grid layouts, charts, tables styles omitted in this skeleton */
-        /* Full implementation: 2800+ lines of custom CSS with light/dark themes,
-           responsive grid, chart components, modal styles, sidebar + bottom-nav layout */
+        /* CSS styles omitted — full implementation includes:
+         * - Light/Dark theme with CSS variables (--bg, --text, --accent, etc.)
+         * - Responsive grid layout (sidebar on desktop, bottom-nav on mobile)
+         * - Custom chart components (bar charts, funnel) built from scratch
+         * - Modal, toast, and table styles
+         * - Animations: pageSlideIn, fadeIn, chatIn
+         */
+        :root { --bg: #0d1117; --text: #e6edf3; --accent: #2f81f7; --border: #30363d; }
+        [data-theme="light"] { --bg: #ffffff; --text: #1d1d1f; --accent: #0056b3; --border: #d2d2d7; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+        .section-page { display: none; animation: pageSlideIn .35s cubic-bezier(.4,0,.2,1); }
+        .section-page.active { display: block; }
+        @keyframes pageSlideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+        .sidebar-tab { padding: 12px 20px; border: none; background: none; cursor: pointer; color: var(--text); }
+        .sidebar-tab.active { border-left: 3px solid var(--accent); }
     </style>
 </head>
 <body>
-    <!-- Topbar with login, theme toggle, notifications -->
-    
-    <!-- Sidebar tabs (desktop) -->
-    <!-- 📊 Resumen | 📡 Monitor en Vivo | 📋 Leads 🔥 | 💬 Conversaciones | 🏠 Inventario -->
-    
-    <!-- Bottom tabs (mobile) -->
-    
-    <!-- 📊 SECTION: Resumen -->
-    <!-- KPIs: unique users, messages, leads, conversion rate -->
-    <!-- Activity charts: messages & leads per day (7d/30d/90d) -->
-    <!-- Conversion funnel: Conversations → Leads → Handoffs → Visits -->
-    <!-- Average response time -->
-    
-    <!-- 📡 SECTION: Monitor en Vivo -->
-    <!-- Real-time conversation stream (5s polling) -->
-    <!-- Auto-refresh toggle -->
-    <!-- Lead status filter (hot/warm/cold) -->
-    
-    <!-- 📋 SECTION: Leads -->
-    <!-- Lead scoring: nuevo/frío/tibio/caliente -->
-    <!-- Hot leads polling with 🔥 indicator -->
-    <!-- Preferences: barrio, operación, tipo, presupuesto -->
-    <!-- Conversation history -->
-    
-    <!-- 💬 SECTION: Conversaciones -->
-    <!-- Message history per phone -->
-    <!-- Search by phone number -->
-    <!-- Per-phone metrics: message count, properties mentioned -->
-    
-    <!-- 🏠 SECTION: Inventario -->
-    <!-- Property CRUD -->
-    <!-- 289 properties with vector embeddings -->
-    <!-- Filters: city, zona, type, status -->
-    <!-- Pagination + CSV export -->
-    <!-- Embedding generation (individual + batch via Ollama) -->
-    
+    <!-- 5 sections: Resumen, Monitor en Vivo, Leads, Conversaciones, Inventario
+         Each implemented with custom HTML + dynamic JS population -->
+
     <script>
-        /* Full implementation: 2800+ lines of vanilla JavaScript
-           - SPA routing with showSection()
-           - API helpers: apiGet(), apiPost(), apiPatch(), apiDelete() with retries
-           - polling for hot leads and live monitor
-           - custom chart rendering (bar charts, funnel)
-           - pagination, search, sort for tables
-           - property CRUD with modal forms
-           - batch import from JSON
-           - CSV export
-           - Ollama integration for embeddings
-           - light/dark theme with localStorage persistence
-        */
+    /**
+     * Pértiga Dashboard — Frontend SPA Code Excerpt
+     *
+     * Real production JavaScript showing core patterns:
+     * - SPA routing with showSection()
+     * - API helpers with retries (apiGet, apiPatch, apiPost, apiDelete)
+     * - Date filtering/presets
+     * - Hot leads polling
+     * - Theme toggle with localStorage persistence
+     *
+     * Full implementation is 2800+ lines. This excerpt shows the patterns
+     * without the full HTML/CSS or section-specific rendering functions.
+     */
+
+    // === SPA ROUTING ===
+    const SECTION_MAP = {
+        resumen: 'sectionResumen',
+        monitor: 'sectionMonitor',
+        leads: 'sectionLeads',
+        conversaciones: 'sectionConversaciones',
+        inventario: 'sectionInventario'
+    };
+
+    function showSection(id) {
+        document.querySelectorAll('.section-page').forEach(s => s.classList.remove('active'));
+        const sectionId = SECTION_MAP[id];
+        if (sectionId) {
+            const el = document.getElementById(sectionId);
+            if (el) el.classList.add('active');
+        }
+        // Update tab states
+        document.querySelectorAll('.sidebar-tab, .bottom-tab').forEach(t => t.classList.remove('active'));
+        const activeTab = document.querySelector(`[data-section="${id}"]`);
+        if (activeTab) activeTab.classList.add('active');
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Restore last viewed section in URL hash
+        if (history.replaceState) history.replaceState(null, '', '#' + id);
+    }
+
+    function restoreSection() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && SECTION_MAP[hash]) {
+            showSection(hash);
+        } else {
+            // Try the last selected from localStorage
+            const last = localStorage.getItem('pertiga-last-section');
+            if (last && SECTION_MAP[last]) showSection(last);
+            else showSection('resumen');
+        }
+    }
+
+    // === API HELPERS (with retries) ===
+    let _apiKey = '';
+    function setApiKey(key) { _apiKey = key; }
+
+    async function apiGet(table, params = '', retries = 2) {
+        const url = '/api/' + table + (params ? '?' + params : '');
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await fetch(url, {
+                    headers: {
+                        'apikey': _apiKey,
+                        'Authorization': 'Bearer ' + _apiKey,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (err) {
+                if (attempt === retries) throw err;
+                await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt))); // exponential backoff
+            }
+        }
+    }
+
+    async function apiPatch(table, params, data, retries = 2) {
+        const url = '/api/' + table + (params ? '?' + params : '');
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': _apiKey,
+                        'Authorization': 'Bearer ' + _apiKey,
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (err) {
+                if (attempt === retries) throw err;
+                await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
+            }
+        }
+    }
+
+    async function apiPost(table, data) {
+        const url = '/api/' + table;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': _apiKey,
+                'Authorization': 'Bearer ' + _apiKey,
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+    }
+
+    async function apiDelete(table, params) {
+        const url = '/api/' + table + (params ? '?' + params : '');
+        const res = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'apikey': _apiKey,
+                'Authorization': 'Bearer ' + _apiKey
+            }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+    }
+
+    // === DATE FILTERING ===
+    let datePreset = '30d';
+    let customStart = null;
+    let customEnd = null;
+
+    function getDateRange() {
+        if (datePreset === 'custom' && customStart && customEnd) {
+            return { start: new Date(customStart), end: new Date(customEnd) };
+        }
+        const end = new Date();
+        const start = new Date();
+        switch (datePreset) {
+            case 'today': start.setHours(0, 0, 0, 0); break;
+            case '7d': start.setDate(start.getDate() - 7); break;
+            case '30d': start.setDate(start.getDate() - 30); break;
+            case 'month': start.setDate(1); start.setHours(0, 0, 0, 0); break;
+            case 'all': start.setFullYear(2020); break;
+        }
+        return { start, end };
+    }
+
+    function setDatePreset(preset) {
+        datePreset = preset;
+        document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-preset="${preset}"]`);
+        if (btn) btn.classList.add('active');
+        if (typeof renderAll === 'function') renderAll();
+    }
+
+    function filterByDate(item, dateField = 'created_at') {
+        const { start, end } = getDateRange();
+        const d = new Date(item[dateField]);
+        return d >= start && d <= end;
+    }
+
+    // === HOT LEADS POLLING ===
+    let allLeads = [];
+    let pollTimer = null;
+
+    async function checkHotLeads() {
+        try {
+            const fresh = await apiGet('leads', 'order=updated_at.desc&limit=100');
+            allLeads = fresh;
+            const hotCount = fresh.filter(l => 
+                l.lead_score === 'caliente' || l.lead_score === 'hot'
+            ).length;
+            updateHotLeadIndicator(hotCount);
+        } catch (e) {
+            console.error('Hot leads poll failed:', e.message);
+        }
+    }
+
+    function updateHotLeadIndicator(count) {
+        const badge = document.getElementById('sidebarFire');
+        if (badge) {
+            badge.style.display = count > 0 ? 'inline' : 'none';
+            const parent = badge.parentElement;
+            if (parent && parent.querySelector('.fire-count')) {
+                parent.querySelector('.fire-count').textContent = count;
+            }
+        }
+    }
+
+    function startHotLeadsPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        checkHotLeads();
+        pollTimer = setInterval(checkHotLeads, 30000); // poll every 30s
+    }
+
+    // === THEME TOGGLE (paleta dark/light con persistencia en localStorage) ===
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('pertiga-theme', next);
+    }
+
+    function initTheme() {
+        const saved = localStorage.getItem('pertiga-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+
+    // === CONVERSION FUNNEL ===
+    function renderFunnel() {
+        const filteredLeads = (window.allLeads || []).filter(l => filterByDate(l, 'created_at'));
+        const filteredConvos = (window.allConversations || []).filter(c => filterByDate(c, 'created_at'));
+        const uniquePhones = [...new Set(filteredConvos.map(c => c.phone))].length;
+        const leadsCount = filteredLeads.length;
+        const handoffsCount = filteredLeads.filter(l => 
+            (l.notes || '').toLowerCase().includes('handoff')
+        ).length;
+        const visitasCount = filteredLeads.filter(l => {
+            const notes = (l.notes || '').toLowerCase();
+            return notes.includes('visita') || notes.includes('agendar') || notes.includes('cita');
+        }).length;
+
+        const funnelData = [
+            { id: 'Convo', count: uniquePhones },
+            { id: 'Leads', count: leadsCount },
+            { id: 'Handoffs', count: handoffsCount },
+            { id: 'Visitas', count: visitasCount }
+        ];
+
+        const maxVal = Math.max(...funnelData.map(d => d.count), 1);
+        funnelData.forEach(stage => {
+            const bar = document.getElementById('funnel' + stage.id);
+            if (bar) {
+                bar.textContent = stage.count;
+                bar.style.height = Math.max(48, (stage.count / maxVal) * 80) + 'px';
+            }
+        });
+
+        // Drop-off rates between stages
+        function dropOff(prev, curr) {
+            if (prev === 0) return '';
+            const diff = prev - curr;
+            return `▼ ${diff} (${Math.round((diff / prev) * 100)}%)`;
+        }
+        // ... (rendering omitted)
+    }
+
+    // === INIT ===
+    window.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        restoreSection();
+        startHotLeadsPolling();
+        if (window.__PERTIGA_API_KEY) {
+            setApiKey(window.__PERTIGA_API_KEY);
+        }
+    });
     </script>
 </body>
 </html>
